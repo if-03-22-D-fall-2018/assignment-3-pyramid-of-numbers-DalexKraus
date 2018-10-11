@@ -1,9 +1,9 @@
 /*----------------------------------------------------------
- *				HTBLA-Leonding / Class: <your class>
+ *				HTBLA-Leonding / Class: 2DHIF
  * ---------------------------------------------------------
- * Exercise Number: 0
+ * Exercise Number: 3
  * Title:			Pyramid of Numbers
- * Author:			<your name>
+ * Author:			David Kraus
  * ----------------------------------------------------------
  * Description:
  * Calculates a pyramid of numbers, i.e., it multiplies a big
@@ -14,6 +14,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 /// The maximum number of digits allowed in a big int.
 #define MAX_DIGITS 80
@@ -64,6 +65,12 @@ void divide(const struct BigInt *big_int, int divisor, struct BigInt *big_result
 */
 void copy_big_int(const struct BigInt *from, struct BigInt *to);
 
+
+/**
+*** Reverses a BigInt by each digit
+**/
+void reverse_big_int(struct BigInt *big_int);
+
 /**
 *** main() reads the base number from which the pyramid has to be calculated
 *** into an array of char. The max. length of this number is MAX_DIGITS.
@@ -77,30 +84,161 @@ void copy_big_int(const struct BigInt *from, struct BigInt *to);
 */
 int main(int argc, char *argv[])
 {
-	struct BigInt firstNumber;
+	struct BigInt number;
 	char userInput[MAX_DIGITS];
 
 	printf("Pyramid of numbers\n\n");
 	printf("Please enter a number: ");
 	scanf("%s", userInput);
 
-	strtobig_int(userInput, strlen(userInput), &firstNumber);
+	strtobig_int(userInput, strlen(userInput), &number);
 
-	for (int i = 0; i < firstNumber.digits_count; i++) {
-		printf("%d", firstNumber.the_int[i]);
+	//multiply
+	struct BigInt result;
+	int multiplicationFactor = 2;
+
+	for (int i = 0; i < 8; i++)
+	{
+		print_big_int(&number);
+		printf(" * %d = ", multiplicationFactor);
+		multiply(&number, multiplicationFactor, &result);
+
+		print_big_int(&result);
+		printf("\n");
+
+		number = result;
+		multiplicationFactor++;
 	}
-	printf("\n");
+
+	//divide
+	int divisionFactor = 2;
+	for (int i = 0; i < 8; i++)
+	{
+		print_big_int(&number);
+		printf(" / %d = ", divisionFactor);
+		divide(&number, divisionFactor, &result);
+
+		print_big_int(&result);
+		printf("\n");
+
+		number = result;
+		divisionFactor++;
+	}
+
 
 	return 0;
 }
 
+void reverse_big_int(struct BigInt *big_int)
+{
+	for (int i = 0; i < big_int->digits_count - 1; i++)
+	{
+		int tempOne = big_int->the_int[big_int->digits_count - i - 1];
+		int tempTwo = big_int->the_int[i];
+		big_int->the_int[i] = tempOne;
+		big_int->the_int[big_int->digits_count - i - 1] = tempTwo;
+	}
+}
+
 int strtobig_int(const char *str, int len, struct BigInt *big_int)
 {
-	(*big_int).digits_count = len;
+	int convertedDigits = 0;
 	for (int i = 0; i < len; i++)
 	{
-		(*big_int).the_int[i] = str[len - i - 1] - 48;
+		if (str[i] >= '0' && str[i] <= '9')
+		{
+			(*big_int).the_int[convertedDigits] = str[len - i - 1] - 48;
+			convertedDigits++;
+		}
 	}
 
-	return len;
+	big_int->digits_count = convertedDigits;
+	return convertedDigits;
+}
+
+void copy_big_int(const struct BigInt *from, struct BigInt *to)
+{
+	for (int i = 0; i < from->digits_count; i++)
+	{
+		to->the_int[i] = from->the_int[i];
+	}
+	to->digits_count = from->digits_count;
+}
+
+void multiply(const struct BigInt *big_int, int factor, struct BigInt *big_result)
+{
+	int carriage = 0;
+	int result = 0;
+
+	big_result->digits_count = big_int->digits_count;
+
+	for (int i = 0; i < big_int->digits_count; i++)
+	{
+		result = big_int->the_int[i] * factor + carriage;
+		carriage = 0;
+
+		if (result > 9)
+		{
+			// size specification is bigtoo small
+			if (i == big_int->digits_count - 1)
+			{
+				big_result->digits_count++;
+				big_result->the_int[i] = result % 10;
+				big_result->the_int[i + 1] = result / 10;
+			}
+			else
+			{
+				carriage = result / 10;
+				big_result->the_int[i] = result % 10;
+			}
+		}
+		else
+		{
+			big_result->the_int[i] = result;
+		}
+	}
+}
+
+void divide(const struct BigInt *big_int, int divisor, struct BigInt *big_result)
+{
+	int carriage = 0;
+	int result;
+
+	for (int i = 0; i < big_int->digits_count; i++)
+	{
+		big_result->the_int[i] = 0;
+		big_result->digits_count = i + 1;
+		result = carriage * 10 + big_int->the_int[i];
+
+		if (result >= divisor)
+		{
+			big_result->the_int[i] = result / divisor;
+			carriage = result % divisor;
+		}
+		else
+		{
+			carriage = big_int->the_int[i];
+		}
+	}
+}
+
+
+void print_big_int(const struct BigInt *big_int)
+{
+	bool isFirstDigit = true;
+	struct BigInt copy;
+	copy_big_int(big_int, &copy);
+
+	for (int i = 0; i < copy.digits_count; i++)
+	{
+		if (isFirstDigit && copy.the_int[copy.digits_count - 1 - i] != 0)
+		{
+			isFirstDigit = false;
+		}
+
+		if (!isFirstDigit)
+		{
+			printf("%d", copy.the_int[copy.digits_count - 1 - i]);
+		}
+	}
 }
