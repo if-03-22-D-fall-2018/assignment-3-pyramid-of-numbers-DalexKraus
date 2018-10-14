@@ -114,9 +114,9 @@ int main(int argc, char *argv[])
 	int divisionFactor = 2;
 	for (int i = 0; i < 8; i++)
 	{
+		divide(&number, divisionFactor, &result);
 		print_big_int(&number);
 		printf(" / %d = ", divisionFactor);
-		divide(&number, divisionFactor, &result);
 
 		print_big_int(&result);
 		printf("\n");
@@ -124,7 +124,6 @@ int main(int argc, char *argv[])
 		number = result;
 		divisionFactor++;
 	}
-
 
 	return 0;
 }
@@ -158,87 +157,86 @@ int strtobig_int(const char *str, int len, struct BigInt *big_int)
 
 void copy_big_int(const struct BigInt *from, struct BigInt *to)
 {
-	for (int i = 0; i < from->digits_count; i++)
-	{
-		to->the_int[i] = from->the_int[i];
-	}
-	to->digits_count = from->digits_count;
+	*to = *from;
 }
 
 void multiply(const struct BigInt *big_int, int factor, struct BigInt *big_result)
 {
-	int carriage = 0;
-	int result = 0;
-
+	int overflow = 0;
 	big_result->digits_count = big_int->digits_count;
 
-	for (int i = 0; i < big_int->digits_count; i++)
+	for (int i = big_int->digits_count - 1; i >= 0 && i < big_result->digits_count; i--)
 	{
-		result = big_int->the_int[i] * factor + carriage;
-		carriage = 0;
+		int result = big_int->the_int[i] * factor + overflow;
 
 		if (result > 9)
 		{
-			// size specification is bigtoo small
-			if (i == big_int->digits_count - 1)
+			int temp = result / 10;
+			if (i == 0)
 			{
-				big_result->digits_count++;
 				big_result->the_int[i] = result % 10;
-				big_result->the_int[i + 1] = result / 10;
+				big_result->digits_count++;
+
+				//Swap digits
+				for (int i = big_result->digits_count - 1 ; i > 0; i--) {
+					big_result->the_int[i] = big_result->the_int[i - 1];
+				}
+
+				big_result->the_int[i] = temp;
 			}
 			else
 			{
-				carriage = result / 10;
 				big_result->the_int[i] = result % 10;
 			}
+			overflow = temp;
 		}
 		else
 		{
-			big_result->the_int[i] = result;
+			big_result->the_int[i] = result % 10;
+			overflow = 0;
 		}
 	}
 }
 
 void divide(const struct BigInt *big_int, int divisor, struct BigInt *big_result)
 {
-	int carriage = 0;
-	int result;
+	bool numberSet = false;
+	int digits = 0;
+    int overflow = 0;
 
-	for (int i = 0; i < big_int->digits_count; i++)
+    for(int i = 0; i < big_int->digits_count; i++)
 	{
-		big_result->the_int[i] = 0;
-		big_result->digits_count = i + 1;
-		result = carriage * 10 + big_int->the_int[i];
+        int result = (big_int->the_int[i] + overflow) / divisor;
 
-		if (result >= divisor)
+		if (result == 0 && numberSet)
 		{
-			big_result->the_int[i] = result / divisor;
-			carriage = result % divisor;
-		}
-		else
+            big_result->the_int[digits] = result;
+            digits++;
+        }
+		else if (result != 0)
 		{
-			carriage = big_int->the_int[i];
-		}
-	}
+	    	numberSet = true;
+	    	big_result->the_int[digits] = result;
+	    	digits++;
+        }
+
+        overflow = (big_int->the_int[i] + overflow) % divisor;
+        overflow *= 10;
+    }
+
+    big_result->digits_count = digits;
 }
-
 
 void print_big_int(const struct BigInt *big_int)
 {
-	bool isFirstDigit = true;
-	struct BigInt copy;
-	copy_big_int(big_int, &copy);
+	char numberString[big_int->digits_count];
 
-	for (int i = 0; i < copy.digits_count; i++)
+	for (int i = 0; i < big_int->digits_count; i++)
 	{
-		if (isFirstDigit && copy.the_int[copy.digits_count - 1 - i] != 0)
-		{
-			isFirstDigit = false;
-		}
-
-		if (!isFirstDigit)
-		{
-			printf("%d", copy.the_int[copy.digits_count - 1 - i]);
-		}
+		numberString[big_int->digits_count - i - 1] = ('0' + big_int->the_int[i]);
 	}
+
+	numberString[big_int->digits_count] = 0;
+
+	printf("%s", numberString);
 }
