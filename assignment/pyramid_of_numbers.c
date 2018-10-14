@@ -202,29 +202,29 @@ void divide(const struct BigInt *big_int, int divisor, struct BigInt *big_result
 {
 	bool numberSet = false;
 	int digits = 0;
-    int overflow = 0;
+	int overflow = 0;
 
-    for(int i = 0; i < big_int->digits_count; i++)
+	for(int i = 0; i < big_int->digits_count; i++)
 	{
-        int result = (big_int->the_int[i] + overflow) / divisor;
+		int result = (big_int->the_int[i] + overflow) / divisor;
 
 		if (result == 0 && numberSet)
 		{
-            big_result->the_int[digits] = result;
-            digits++;
-        }
+			big_result->the_int[digits] = result;
+			digits++;
+		}
 		else if (result != 0)
 		{
-	    	numberSet = true;
-	    	big_result->the_int[digits] = result;
-	    	digits++;
-        }
+			numberSet = true;
+			big_result->the_int[digits] = result;
+			digits++;
+		}
 
-        overflow = (big_int->the_int[i] + overflow) % divisor;
-        overflow *= 10;
-    }
+		overflow = (big_int->the_int[i] + overflow) % divisor;
+		overflow *= 10;
+	}
 
-    big_result->digits_count = digits;
+	big_result->digits_count = digits;
 }
 
 void print_big_int(const struct BigInt *big_int)
